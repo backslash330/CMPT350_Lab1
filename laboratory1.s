@@ -69,16 +69,6 @@ loop:
 endloop:
 	sb $zero, 0($t1) # store byte $zero at address 0($t1)
 
-	# # print the secret word
-	# li $v0, 4 # load immediate value 4 into $v0
-	# la $a0, secret_word # load address of secret_word into $a0
-	# syscall
-
-	# # print a newline
-	# li $v0, 4
-	# la $a0, nl
-	# syscall
-
 	# store guesses in $t0
 	lw $t0, Guesses # load word Guesses into $t0
 
@@ -162,14 +152,6 @@ delete_letter:
 
 end_of_word:
 
-# # print secret word
-# 	la $a0, secret_word # load address of secret_word into $a0
-# 	syscall 
-# # print a newline
-# 	la $a0, nl # load address of nl into $a0
-# 	syscall
-
-end_guess_loop:
 	# if the the counter is more then 0, print "Correct guess!"
 	# and decrement the number of guesses
 	beq $t3, $0, incorrect_guess
@@ -247,13 +229,3 @@ win_game:
 	li $v0, 10
 	li $a0, 1
 	syscall
-
-
-
-	#this block is equivalent to the "exit(0)" or "return 0" lines in a C program
-	li $v0, 10 #load the "terminate program" syscall value into the v0 register
-	syscall #terminate the program
-
-	
-	# decrement the number of guesses
-	sub $t0, $t0, 1
