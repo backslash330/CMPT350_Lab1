@@ -111,11 +111,6 @@ game_loop:
 	li $a1, 65	# load immediate value 2 into $a1
 	syscall
 
-	# print a newline
-	li $v0, 4	# load immediate value 4 into $v0
-	#la $a0, nl # load address of nl into $a0
-	# syscall
-
 	# store the users guess into the progress space 
 	la $t1, user_guess
 	lb $t2, 0($t1)
@@ -154,6 +149,7 @@ end_of_word:
 
 	# if the the counter is more then 0, print "Correct guess!"
 	# and decrement the number of guesses
+	li $v0, 4	# load immediate value 4 into $v0
 	beq $t3, $0, incorrect_guess
 	la $a0, correct_message
 	syscall
