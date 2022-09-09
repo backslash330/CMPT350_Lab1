@@ -12,6 +12,11 @@
 # number of incorrect guesses   #
 # is reached.                   #
 ################################# 
+#how much checking do we need to do
+
+# do we need to assume malicious input??
+# do we treat upper and lower as different or the same?
+# how much formatting would they like?
 
 #The data section reserves memory locations for future reference in the program. Commonly used for static strings
 
@@ -22,7 +27,7 @@ Guesses: .word 6
 progress: .space 6
 progress_counter: .word 0
 secret_word: .space 12
-user_guess: .space 3
+user_guess: .space 64
 intial_prompt: .asciiz "Welcome to Hangman! Please enter a word for the to guess between 5 and 10 characters: "
 guess_prompt: .asciiz "Please enter a letter to guess: "
 progress_message: .asciiz "Progress: "
@@ -113,13 +118,13 @@ game_loop:
 	# read user input into user_guess
 	li $v0, 8 # load immediate value 8 into $v0
 	la $a0, user_guess # load address of user_guess into $a0
-	li $a1, 2	# load immediate value 2 into $a1
+	li $a1, 65	# load immediate value 2 into $a1
 	syscall
 
 	# print a newline
 	li $v0, 4	# load immediate value 4 into $v0
-	la $a0, nl # load address of nl into $a0
-	syscall
+	#la $a0, nl # load address of nl into $a0
+	# syscall
 
 	# store the users guess into the progress space 
 	la $t1, user_guess
@@ -233,6 +238,11 @@ lose_game:
 win_game:
 	la $a0, win
 	syscall
+
+	# print new line 
+	la $a0, nl
+	syscall
+
 	# exit with code 1
 	li $v0, 10
 	li $a0, 1
