@@ -19,16 +19,18 @@
 # the program has a fixed number of guesses
 Guesses: .word 6
 # Program keeps a progress string of all guessed letters
-progress: .asciiz ""
+progress: .space 6
+progress_counter: .word 0
 secret_word: .space 12
 user_guess: .space 3
-counter: .space 0
-intial_prompt: .asciiz "Welcome to Hangman! Please enter a word for the to guess betwwen 5 and 10 characters: "
+intial_prompt: .asciiz "Welcome to Hangman! Please enter a word for the to guess between 5 and 10 characters: "
 guess_prompt: .asciiz "Please enter a letter to guess: "
 progress_message: .asciiz "Progress: "
-correct_guess: .asciiz "Correct guess!"
+correct_message: .asciiz "Correct guess!"
+incorrect_message: .asciiz "Incorrect guess!"
 guesses_remaining: .asciiz "Guesses remaining: "
-lose: .asciiz "You lose!"
+lose: .asciiz "Out of Guesses! You lose!"
+win: .asciiz "You guessed the whole word! You win!"
 nl: .asciiz "\n"
 
 #The text section contains the instructions to execute. Most of your time will be spent in the .text section. The text section must have a main: label to function properly
@@ -37,162 +39,139 @@ nl: .asciiz "\n"
 #the main: label tells SPIM where to begin progam execution
 main:
 	# Prompt the user for a 5-10 letter word
-	li $v0, 4
-	la $a0, intial_prompt
+	li $v0, 4 # load immediate value 4 into $v0
+	la $a0, intial_prompt # load address of intial_prompt into $a0
 	syscall
 
 	# Read the user input into the secret_word variable
-	li $v0, 8
-	la $a0, secret_word
-	li $a1, 11
+	li $v0, 8 # load immediate value 8 into $v0
+	la $a0, secret_word # load address of secret_word into $a0
+	li $a1, 11 # load immediate value 11 into $a1
 	syscall
 
 	# loop through and remove the newline character from the end of the string
-	la $t0, 0
-	la $t1, 10
-	la $t2, secret_word
+	la $t0, 10 # load address of 10 into $t0
+	la $t1, secret_word # load address of secret_word into $t1
+	li $t6, 0 # Length of secret word counter. load immediate value 0 into $t6
 
 loop:
-	lb $t3, 0($t2)
-	beq $t3, $t1, endloop
-	addi $t2, $t2, 1
-	j loop
+	lb $t2, 0($t1) # load byte at address 0($t1)  into $t2
+	beq $t2, $t0, endloop # if $t2 is equal to $t0, jump to endloop
+	addi $t6, $t6, 1 # increment $t6 by 1
+	addi $t1, $t1, 1 # add immediate 1 to $t1
+	j loop # jump to loop
 
 endloop:
-	sb $t0, 0($t2)
+	sb $zero, 0($t1) # store byte $zero at address 0($t1)
 
 	# # print the secret word
-	# li $v0, 4
-	# la $a0, secret_word
+	# li $v0, 4 # load immediate value 4 into $v0
+	# la $a0, secret_word # load address of secret_word into $a0
 	# syscall
 
-	# print a newline
-	li $v0, 4
-	la $a0, nl
-	syscall
+	# # print a newline
+	# li $v0, 4
+	# la $a0, nl
+	# syscall
 
 	# store guesses in $t0
-	lw $t0, Guesses
+	lw $t0, Guesses # load word Guesses into $t0
 
 	# main game loop
 game_loop:
 	# number of guesses remaining
-	li $v0, 4
-	la $a0, guesses_remaining
+	li $v0, 4 # load immediate value 4 into $v0
+	la $a0, guesses_remaining  # load address of guesses_remaining into $a0
 	syscall
 
 	# print t0
-	li $v0, 1
-	move $a0, $t0
+	li $v0, 1 # load immediate value 1 into $v0
+	move $a0, $t0 # move $t0 (Guesses) into $a0
 	syscall
 
 	# print a newline
-	li $v0, 4
-	la $a0, nl
+	li $v0, 4 # load immediate value 4 into $v0
+	la $a0, nl # load address of nl into $a0
 	syscall
 
 	# display letters guessed so far
-	li $v0, 4
-	la $a0, progress_message
+	la $a0, progress_message # load address of progress_message into $a0
 	syscall
 
 	# print the progress string
-	li $v0, 4
-	#la $a0, user_guess
-	la $a0, progress
+	la $a0, progress # load address of progress into $a0
 	syscall
 
 	# print a newline
-	li $v0, 4
-	la $a0, nl
+	la $a0, nl # load address of nl into $a0
 	syscall
 
 	# prompt user for a letter
-	li $v0, 4
-	la $a0, guess_prompt
+	la $a0, guess_prompt # load address of guess_prompt into $a0
 	syscall
 
 	# read user input into user_guess
-	li $v0, 8
-	la $a0, user_guess
-	li $a1, 2
+	li $v0, 8 # load immediate value 8 into $v0
+	la $a0, user_guess # load address of user_guess into $a0
+	li $a1, 2	# load immediate value 2 into $a1
 	syscall
 
 	# print a newline
-	li $v0, 4
-	la $a0, nl
+	li $v0, 4	# load immediate value 4 into $v0
+	la $a0, nl # load address of nl into $a0
 	syscall
+
+	# store the users guess into the progress space 
+	la $t1, user_guess
+	lb $t2, 0($t1)
+	lb $t3, progress_counter
+	sb $t2, progress($t3)
+	addi $t3, $t3, 1
+	sb $t3, progress_counter
 
 	# check if letter is in word
 	# iterate through the word and delete the letter if it is in the word
 	# and iterate the counter
-	la $t1, secret_word
-	la $t2, user_guess
-	la $t3, counter
+	la $t1, secret_word # load address of secret_word into $t1
+	la $t2, user_guess # load address of user_guess into $t2
+	li $t3, 0 # create counter. load byte $zero into $t3
 
 # look through the word, jump to deletion if the letter is found, otherwise increment the counter and continue
 look_through_word:
-	lb $t4, 0($t1)
-	lb $t5, 0($t2)
+	lb $t4, 0($t1) # load byte at address 0($t1) into $t4
+	lb $t5, 0($t2) # load byte at address 0($t2) into $t5
 	# if the word is ended, jump the end of the loop
 	beq $t4, $zero, end_of_word # if the byte is zero, jump to end_of_word
 	beq $t4, $t5, delete_letter # if the byte is the same as the letter, jump to delete_letter
-	addi $t1, $t1, 1 
-	addi $t3, $t3, 1
-	j look_through_word
+	addi $t1, $t1, 1  # add immediate 1 to $t1
+	j look_through_word # jump to look_through_word
 
 delete_letter:
 	# if the letter is found, replace it with a underscore
 	# do this by replacing the value of 0($t1) with an underscore
-	li $t5, 95
-	sb $t5, 0($t1)
-	addi $t1, $t1, 1
-	addi $t3, $t3, 1
-	j look_through_word
+	li $t5, 95 # load immediate value 95 (underscore) into $t5
+	sb $t5, 0($t1) # store byte $t5 at address 0($t1)
+	addi $t1, $t1, 1 # add immediate 1 to $t1
+	addi $t3, $t3, 1 # add immediate 1 to $t3
+	j look_through_word # jump to look_through_word
 
 end_of_word:
 
-# print secret word
-	li $v0, 4
-	la $a0, secret_word
-	syscall
-# print a newline
-	li $v0, 4
-	la $a0, nl
-	syscall
-
-
-
-# 	la $t1, secret_word
-# 	la $t2, user_guess
-# 	la $t3, counter
-# 	la $t4, 0
-
-# guess_loop:
-# 	lb $t5, 0($t1)
-# 	beq $t5, $t4, end_guess_loop
-# 	beq $t5, $t2, found_letter
-# 	addi $t1, $t1, 1
-# 	j guess_loop
-
-# found_letter:
-# 	# if the letter is in the word, turn it into a dash and increment the counter
-# 	sb $t4, 0($t1)
-# 	addi $t3, $t3, 1
-# 	addi $t1, $t1, 1
-# 	j guess_loop
-
+# # print secret word
+# 	la $a0, secret_word # load address of secret_word into $a0
+# 	syscall 
+# # print a newline
+# 	la $a0, nl # load address of nl into $a0
+# 	syscall
 
 end_guess_loop:
 	# if the the counter is more then 0, print "Correct guess!"
 	# and decrement the number of guesses
 	beq $t3, $0, incorrect_guess
-	li $v0, 4
-	la $a0, correct_guess
+	la $a0, correct_message
 	syscall
 
 	# print a newline
-	li $v0, 4
 	la $a0, nl
 	syscall
 
@@ -204,11 +183,34 @@ end_guess_loop:
 incorrect_guess:
 	# if the letter is not in the word, print "Incorrect guess!"
 	# and decrement the number of guesses
-	li $v0, 4
-	la $a0, incorrect_guess
+	la $a0, incorrect_message
+	syscall
+
+	# print new line
+	la $a0, nl
 	syscall
 
 game_over_check:
+	# check to see if the game is won
+	# loop over the word and count the number of underscores into $t7
+	la $t1, secret_word # load address of secret_word into $t1
+	# loop through the word and count the number of underscores
+	li $t7, 0 # load immediate value 0 into $t7
+		# loop through the word and count the number of underscores
+loop_check:
+	lb $t4, 0($t1) # load byte at address 0($t1) into $t4
+	beq $t4, $zero, end_check # if the byte is zero, jump to end_check
+	beq $t4, 95, letter_found # if the byte is underscore, jump to letter_found
+	addi $t1, $t1, 1 # add immediate 1 to $t1
+	j loop_check # jump to loop_check
+letter_found:
+	addi $t7, $t7, 1 # add immediate 1 to $t7
+	addi $t1, $t1, 1 # add immediate 1 to $t1
+	j loop_check # jump to loop_check
+
+end_check:
+	# if $t7 is equal to $t6 then the whole word is guessed and the game is won
+	beq $t7, $t6, win_game # if $t7 is equal to $t6, jump to game_won
 
 	# decrement the number of guesses
 	sub $t0, $t0, 1
@@ -220,7 +222,6 @@ game_over_check:
 	j game_loop
 
 lose_game: 
-	li $v0, 4
 	la $a0, lose
 	syscall
 
@@ -228,6 +229,15 @@ lose_game:
 	li $v0, 10
 	li $a0, 2
 	syscall
+
+win_game:
+	la $a0, win
+	syscall
+	# exit with code 1
+	li $v0, 10
+	li $a0, 1
+	syscall
+
 
 
 	#this block is equivalent to the "exit(0)" or "return 0" lines in a C program
