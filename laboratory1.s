@@ -61,10 +61,10 @@ loop:
 endloop:
 	sb $t0, 0($t2)
 
-	# print the secret word
-	li $v0, 4
-	la $a0, secret_word
-	syscall
+	# # print the secret word
+	# li $v0, 4
+	# la $a0, secret_word
+	# syscall
 
 	# print a newline
 	li $v0, 4
@@ -129,21 +129,58 @@ game_loop:
 	la $t1, secret_word
 	la $t2, user_guess
 	la $t3, counter
-	la $t4, 0
 
-guess_loop:
-	lb $t5, 0($t1)
-	beq $t5, $t4, end_guess_loop
-	beq $t5, $t2, found_letter
-	addi $t1, $t1, 1
-	j guess_loop
-
-found_letter:
-	# if the letter is in the word, turn it into a dash and increment the counter
-	sb $t4, 0($t1)
+# look through the word, jump to deletion if the letter is found, otherwise increment the counter and continue
+look_through_word:
+	lb $t4, 0($t1)
+	lb $t5, 0($t2)
+	# if the word is ended, jump the end of the loop
+	beq $t4, $zero, end_of_word # if the byte is zero, jump to end_of_word
+	beq $t4, $t5, delete_letter # if the byte is the same as the letter, jump to delete_letter
+	addi $t1, $t1, 1 
 	addi $t3, $t3, 1
+	j look_through_word
+
+delete_letter:
+	# if the letter is found, replace it with a underscore
+	# do this by replacing the value of 0($t1) with an underscore
+	li $t5, 95
+	sb $t5, 0($t1)
 	addi $t1, $t1, 1
-	j guess_loop
+	addi $t3, $t3, 1
+	j look_through_word
+
+end_of_word:
+
+# print secret word
+	li $v0, 4
+	la $a0, secret_word
+	syscall
+# print a newline
+	li $v0, 4
+	la $a0, nl
+	syscall
+
+
+
+# 	la $t1, secret_word
+# 	la $t2, user_guess
+# 	la $t3, counter
+# 	la $t4, 0
+
+# guess_loop:
+# 	lb $t5, 0($t1)
+# 	beq $t5, $t4, end_guess_loop
+# 	beq $t5, $t2, found_letter
+# 	addi $t1, $t1, 1
+# 	j guess_loop
+
+# found_letter:
+# 	# if the letter is in the word, turn it into a dash and increment the counter
+# 	sb $t4, 0($t1)
+# 	addi $t3, $t3, 1
+# 	addi $t1, $t1, 1
+# 	j guess_loop
 
 
 end_guess_loop:
@@ -159,8 +196,8 @@ end_guess_loop:
 	la $a0, nl
 	syscall
 
-	# decrement the number of guesses
-	sub $t0, $t0, 1
+	j game_over_check
+
 
 	# if the whole word is guessed, print "You win!" and exit with code 1
 	# check if the secret word is only 
@@ -171,14 +208,14 @@ incorrect_guess:
 	la $a0, incorrect_guess
 	syscall
 
+game_over_check:
+
 	# decrement the number of guesses
 	sub $t0, $t0, 1
-
 
 	# if the number of guesses remaining is 0, print "You lose!" and exit with code 2
 	beq $t0, $zero, lose_game
 
-	
 	# if the number of guesses remaining is not 0, go back to the top of the loop
 	j game_loop
 
@@ -198,3 +235,5 @@ lose_game:
 	syscall #terminate the program
 
 	
+	# decrement the number of guesses
+	sub $t0, $t0, 1
