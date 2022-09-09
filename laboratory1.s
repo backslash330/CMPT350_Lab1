@@ -208,6 +208,10 @@ lose_game:
 	la $a0, lose
 	syscall
 
+	# print new line 
+	la $a0, nl
+	syscall
+
 	# exit with code 2
 	li $v0, 10
 	li $a0, 2
