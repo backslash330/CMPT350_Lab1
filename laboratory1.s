@@ -27,6 +27,7 @@ Guesses: .word 6
 progress: .space 6
 progress_counter: .word 0
 secret_word: .space 12
+hidden_word: .space 12
 user_guess: .space 64
 intial_prompt: .asciiz "Welcome to Hangman! Please enter a word for the to guess between 5 and 10 characters: "
 guess_prompt: .asciiz "Please enter a letter to guess: "
@@ -69,11 +70,41 @@ loop:
 endloop:
 	sb $zero, 0($t1) # store byte $zero at address 0($t1)
 
+	# save in $s0 a set of dashes as long as the secret word
+	la $s0, hidden_word # load address of hidden_word into $s0
+	la $t1, secret_word # load address of secret_word into $t1
+	li $t2, 45 # load immediate value 45 into $t2
+
+loop2:
+	lb $t3, 0($t1) # load byte at address 0($t1)  into $t2
+	beq $t3, $zero, endloop2 # if $t2 is equal to $zero, jump to endloop2
+	sb $t2, 0($s0) # store byte $t2 at address 0($s0)
+	addi $s0, $s0, 1 # add immediate 1 to $s0
+	addi $t1, $t1, 1 # add immediate 1 to $t1
+	j loop2 # jump to loop2
+
+endloop2:
+	sb $zero, 0($s0) # store byte $zero at address 0($s0)
+	# store the address of the hidden word in $s0
+	la $s0, hidden_word # load address of hidden_word into $s0
+
 	# store guesses in $t0
 	lw $t0, Guesses # load word Guesses into $t0
 
 	# main game loop
 game_loop:
+
+	# print $s0
+	li $v0, 4 # load immediate value 4 into $v0
+	la $a0, hidden_word # load address of hidden_word into $a0
+	syscall
+
+
+	# print a newline
+	li $v0, 4 # load immediate value 4 into $v0
+	la $a0, nl # load address of nl into $a0
+	syscall
+
 	# number of guesses remaining
 	li $v0, 4 # load immediate value 4 into $v0
 	la $a0, guesses_remaining  # load address of guesses_remaining into $a0
@@ -133,14 +164,17 @@ look_through_word:
 	# if the word is ended, jump the end of the loop
 	beq $t4, $zero, end_of_word # if the byte is zero, jump to end_of_word
 	beq $t4, $t5, delete_letter # if the byte is the same as the letter, jump to delete_letter
+	addi $s0, $s0, 1 # add immediate 1 to $s0
 	addi $t1, $t1, 1  # add immediate 1 to $t1
 	j look_through_word # jump to look_through_word
 
 delete_letter:
 	# if the letter is found, replace it with a underscore
 	# do this by replacing the value of 0($t1) with an underscore
+	sb $t5, 0($s0) # store byte $t5 at address 0($s0)
 	li $t5, 95 # load immediate value 95 (underscore) into $t5
 	sb $t5, 0($t1) # store byte $t5 at address 0($t1)
+	addi $s0, $s0, 1 # add immediate 1 to $s0
 	addi $t1, $t1, 1 # add immediate 1 to $t1
 	addi $t3, $t3, 1 # add immediate 1 to $t3
 	j look_through_word # jump to look_through_word
@@ -152,6 +186,7 @@ end_of_word:
 	li $v0, 4	# load immediate value 4 into $v0
 	beq $t3, $0, incorrect_guess
 	la $a0, correct_message
+	la $s0, hidden_word
 	syscall
 
 	# print a newline
@@ -205,6 +240,14 @@ end_check:
 	j game_loop
 
 lose_game: 
+	# print hidden work 
+	la $a0, hidden_word
+	syscall
+
+	# print a newline
+	la $a0, nl
+	syscall
+
 	la $a0, lose
 	syscall
 
@@ -218,6 +261,15 @@ lose_game:
 	syscall
 
 win_game:
+	# print hidden word
+	la $a0, hidden_word
+	syscall
+
+	# print a newline 
+	la $a0, nl
+	syscall
+	
+
 	la $a0, win
 	syscall
 
